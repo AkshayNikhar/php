@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Dynamic Denpendency</title>
+</head>
+<body>
+<form>
+	<div class="row">
+
+		<div class="col-md-6">
+			<div class="mb-3">
+				<label for="formrow-text-input" class="form-label">Country</label>
+				<select class="form-select" name="country" id="country" required>
+				<option value="" selected disabled="">Select Country</option>
+				<?php 
+				$result = mysqli_query($conn,"SELECT * FROM `countries` ");
+				while($row = mysqli_fetch_array($result)) {
+				?>
+				<option value="<?php echo $row['id'];?>"><?php echo $row["name"];?></option>
+				<?php
+				}
+
+				?>
+				</select>
+			</div>
+		</div>
+
+		<div class="col-md-6">
+			<div class="mb-3">
+				<label for="formrow-text-input" class="form-label">State</label>
+				<select class="form-select" name="state" id="state" required>
+				</select>
+			</div>
+		</div>
+
+		<div class="col-md-6">
+			<div class="mb-3">
+				<label for="formrow-text-input" class="form-label">City</label>
+				<select class="form-select" name="city" id="city" required>
+				</select>
+			</div>
+		</div>
+
+	</div>
+
+</form>
+
+<!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script> -->
+
+<!--display states by country-->
+<script>
+$(document).ready(function() {
+$('#country').on('change', function() {
+var country_id = this.value;
+$.ajax({
+url: "state.php",
+type: "POST",
+data: {
+country_id: country_id
+},
+cache: false,
+success: function(result){
+$("#state").html(result);
+}
+});
+});
+});
+</script>
+
+<!--display cities by state-->
+<script>
+$(document).ready(function() {
+$('#state').on('change', function() {
+var state_id = this.value;
+$.ajax({
+url: "city.php",
+type: "POST",
+data: {
+state_id: state_id
+},
+cache: false,
+success: function(result){
+$("#city").html(result);
+}
+});
+});
+});
+</script>
+
+</body>
+
+</html>
+
+<!-- create a new php file -->
+<!-- state.php -->
+<?php
+include('includes/config.php');
+$country_id = $_POST["country_id"];
+$result = mysqli_query($conn,"SELECT * FROM `states` where country_id = $country_id ");
+?>
+<option value="">Select State</option>
+<?php
+while($row = mysqli_fetch_array($result)) {
+?>
+<option value="<?php echo $row["id"];?>"><?php echo $row["name"];?></option>
+<?php
+}
+?>
+
+
+<!-- city.php -->
+
+<?php
+include('includes/config.php');
+
+$state_id = $_POST["state_id"];
+$result = mysqli_query($conn,"SELECT * FROM cities where state_id = $state_id");
+?>
+<option value="">Select City</option>
+<?php
+while($row = mysqli_fetch_array($result)) {
+?>
+<option value="<?php echo $row["id"];?>"><?php echo $row["name"];?></option>
+<?php
+}
+?>
