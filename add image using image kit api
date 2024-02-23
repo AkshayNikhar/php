@@ -1,0 +1,111 @@
+<?php 
+session_start(); 
+// include 'layouts/session.php';
+// include 'layouts/head-main.php';
+$feedback='';
+// install composer imagekit
+require_once 'vendor/autoload.php';
+
+use ImageKit\ImageKit;  
+
+// For demonstration purposes, the documentation would use https://ik.imagekit.io/demo as urlEndpoint
+$imageKit = new ImageKit(
+    "public_ZhEruOrfKjMfNgJX4gztQYWWxoU=",
+    "private_OyzSEAAiDt3sd9SrDUdzLGV5qbM=",
+    "https://ik.imagekit.io/sb2aubuwr"
+);
+$get_details = $imageKit->getAuthenticationParameters($token = "", $expire = 0);
+json_encode($get_details);
+
+if(isset($_POST['submit']))
+{
+    $target_dir = "assets/images/brands/";
+    $target_file = $target_dir . basename($_FILES["logo"]["name"]);
+    
+    $file = $_FILES['logo'];
+    move_uploaded_file($_FILES["logo"]["tmp_name"], $target_file);
+    
+    $targetfile=$_FILES["logo"]["name"];
+    
+    $response = $imageKit->uploadFile([
+         'file' => "https://sougatfoods.com/admin/".$targetfile,
+         'fileName' => $file['name'],
+         "useUniqueFileName" => true,            // true|false
+         "folder" => "/Sougat/Brands/",  
+         "fileType" => $file["type"],
+    ]);
+        
+     $brand=$_POST['brands'];
+     $cat=$_POST['categoryID'];
+     $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $brand), '-'));
+     
+    $query = "SELECT * FROM sou_brands WHERE slug = '$slug'";
+    $result = $conn->query($query);
+    if ($result->num_rows>0) {
+      // Slug already exists, add an increment until a unique slug is found
+      $increment = 1;
+      while ($result->num_rows>0) {
+        $new_slug = $slug . '-' . $increment;
+        $query = "SELECT * FROM sou_brands WHERE slug = '$new_slug'";
+        $result = $conn->query($query);
+        $increment++;
+      }
+      $slug = $new_slug;
+    }
+     $insert="INSERT INTO `sou_brands`(`categoryID`, `brands`, `image`, `slug`) VALUES('$cat','$brand','$targetfile','$slug')";
+     if($conn->query($insert))
+        {
+            $feedback='<div class="alert alert-success">Sub Category added successfully </div>';
+        }
+        else
+        {
+            $feedback='<div class="alert alert-danger">Something went wrong</div>';
+        }
+
+}
+
+
+?>
+<!DOCTYPE html>
+<html>
+<head>
+	<title>add image using image kit api</title>
+</head>
+<body>
+	<form method="POST" class="row gy-2 gx-3 needs-validation" enctype="multipart/form-data">
+                                
+    	<div class="col-sm-3">
+    		<label class="visually-hidden" for="autoSizingInput">Category</label>
+    		<select class="form-select" name="categoryID">
+                <option selected>Choose...</option>
+                <?php 
+                $result = mysqli_query($conn,"SELECT * FROM `sou_categories` ");
+                while($row = mysqli_fetch_array($result)) {
+                ?>
+                <option value="<?php echo $row['id'];?>"><?php echo $row["category"];?></option>
+                <?php
+                  }
+                 
+                ?>
+            </select>
+    	
+    	</div>
+    	<div class="col-sm-3">
+    		<label class="visually-hidden" for="logo">Image</label>
+    		<input type="file" class="form-control" id="logo" name="logo"  accept="image/*" required>
+    	
+    	</div>
+    	<div class="col-sm-3">
+    		<label class="visually-hidden" for="autoSizingInput">Brand Name</label>
+    		<input type="text" class="form-control" id="brands" name="brands" placeholder="Brand name" required>
+    	
+    	</div>
+    	
+    	<div class="col-sm-auto">
+    	    <label class="visually-hidden" for="autoSizingInput">Name</label>
+    		<input type="submit" name="submit" value="Add" class="btn btn-primary w-md">
+    		
+    	</div>
+    </form>
+</body>
+</html>
